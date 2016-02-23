@@ -1,11 +1,11 @@
 --
 -- tests/actions/vstudio/sln2005/test_nested_projects.lua
 -- Check Visual Studio 2005+ Nested Projects solution block.
--- Copyright (c) 2012 Jason Perkins and the Premake project
+-- Copyright (c) 2012-2015 Jason Perkins and the Premake project
 --
 
-	T.vstudio_sln2005_nested_projects = { }
-	local suite = T.vstudio_sln2005_nested_projects
+	local suite = test.declare("vstudio_sln2005_nested_projects")
+
 	local sln2005 = premake.vstudio.sln2005
 
 
@@ -13,18 +13,18 @@
 -- Setup
 --
 
-	local sln
+	local wks
 
 	function suite.setup()
 		_ACTION = "vs2008"
-		sln = solution "MySolution"
+		wks = workspace("MyWorkspace")
 		configurations { "Debug", "Release" }
 		language "C++"
 		kind "ConsoleApp"
 	end
 
 	local function prepare()
-		sln2005.NestedProjects(sln)
+		sln2005.nestedProjects(wks)
 	end
 
 
@@ -49,7 +49,7 @@
 		project "MyProject2"
 		prepare()
 		test.capture [[
-	GlobalSection(NestedProjects) = preSolution
+GlobalSection(NestedProjects) = preSolution
 		]]
 	end
 
@@ -63,9 +63,9 @@
 		project "MyProject"
 		prepare()
 		test.capture [[
-	GlobalSection(NestedProjects) = preSolution
-		{42B5DBC6-AE1F-903D-F75D-41E363076E92} = {0B5CD40C-7770-FCBD-40F2-9F1DACC5F8EE}
-	EndGlobalSection
+GlobalSection(NestedProjects) = preSolution
+	{42B5DBC6-AE1F-903D-F75D-41E363076E92} = {0B5CD40C-7770-FCBD-40F2-9F1DACC5F8EE}
+EndGlobalSection
 		]]
 	end
 
@@ -79,10 +79,10 @@
 		project "MyProject"
 		prepare()
 		test.capture [[
-	GlobalSection(NestedProjects) = preSolution
-		{96080FE9-82C0-5036-EBC7-2992D79EEB26} = {0B5CD40C-7770-FCBD-40F2-9F1DACC5F8EE}
-		{42B5DBC6-AE1F-903D-F75D-41E363076E92} = {96080FE9-82C0-5036-EBC7-2992D79EEB26}
-	EndGlobalSection
+GlobalSection(NestedProjects) = preSolution
+	{96080FE9-82C0-5036-EBC7-2992D79EEB26} = {0B5CD40C-7770-FCBD-40F2-9F1DACC5F8EE}
+	{42B5DBC6-AE1F-903D-F75D-41E363076E92} = {96080FE9-82C0-5036-EBC7-2992D79EEB26}
+EndGlobalSection
 		]]
 	end
 
@@ -97,8 +97,8 @@
 		project "MyProject2"
 		prepare()
 		test.capture [[
-	GlobalSection(NestedProjects) = preSolution
-		{42B5DBC6-AE1F-903D-F75D-41E363076E92} = {0B5CD40C-7770-FCBD-40F2-9F1DACC5F8EE}
-	EndGlobalSection
+GlobalSection(NestedProjects) = preSolution
+	{42B5DBC6-AE1F-903D-F75D-41E363076E92} = {0B5CD40C-7770-FCBD-40F2-9F1DACC5F8EE}
+EndGlobalSection
 		]]
 	end

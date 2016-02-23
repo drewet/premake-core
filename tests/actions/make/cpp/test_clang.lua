@@ -14,12 +14,12 @@
 -- Setup
 --
 
-	local sln, prj
+	local wks, prj
 
 	function suite.setup()
-		sln = test.createsolution()
+		wks = test.createWorkspace()
 		toolset "clang"
-		prj = premake.solution.getproject(sln, 1)
+		prj = premake.workspace.getproject(wks, 1)
 	end
 
 
@@ -31,9 +31,15 @@
 		make.cppConfigs(prj)
 		test.capture [[
 ifeq ($(config),debug)
-  CC = clang
-  CXX = clang++
-  AR = ar
+  ifeq ($(origin CC), default)
+    CC = clang
+  endif
+  ifeq ($(origin CXX), default)
+    CXX = clang++
+  endif
+  ifeq ($(origin AR), default)
+    AR = ar
+  endif
   		]]
 	end
 

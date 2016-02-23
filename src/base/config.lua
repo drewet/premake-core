@@ -31,7 +31,14 @@
 	function config.buildtargetinfo(cfg, kind, field)
 		local basedir = cfg.project.location
 
-		local directory = cfg[field.."dir"] or cfg.targetdir or basedir
+		local targetdir
+		if cfg.platform then
+			targetdir = path.join(basedir, 'bin', cfg.platform, cfg.buildcfg)
+		else
+			targetdir = path.join(basedir, 'bin', cfg.buildcfg)
+		end
+
+		local directory = cfg[field.."dir"] or cfg.targetdir or targetdir
 		local basename = cfg[field.."name"] or cfg.targetname or cfg.project.name
 
 		local prefix = cfg[field.."prefix"] or cfg.targetprefix or ""
@@ -243,9 +250,9 @@
 			local item
 
 			-- Sort the links into "sibling" (is another project in this same
-			-- solution) and "system" (is not part of this solution) libraries.
+			-- workspace) and "system" (is not part of this workspace) libraries.
 
-			local prj = premake.solution.findproject(cfg.solution, link)
+			local prj = p.workspace.findproject(cfg.workspace, link)
 			if prj and kind ~= "system" then
 
 				-- Sibling; is there a matching configuration in this project that
@@ -320,7 +327,7 @@
 
 	function config.getruntime(cfg)
 		local linkage = iif(cfg.flags.StaticRuntime, "Static", "Shared")
-		if (cfg.runtime == nil) then
+		if not cfg.runtime then
 			return linkage .. iif(config.isDebugBuild(cfg), "Debug", "Release")
 		else
 			return linkage .. cfg.runtime
@@ -352,14 +359,15 @@
 
 
 
---
--- Determine if a configuration contains one or more resource files.
---
+---
+-- Returns true if any of the files in the provided container pass the
+-- provided test function.
+---
 
-	function config.hasResourceFiles(self)
+	function config.hasFile(self, testfn)
 		local files = self.files
 		for i = 1, #files do
-			if path.isresourcefile(files[i]) then
+			if testfn(files[i]) then
 				return true
 			end
 		end
@@ -469,46 +477,52 @@
 			table.insertflat(flags, replacement)
 		end
 
-		-- For each configuration field provided in the mapping, pull the
-		-- corresponding list of values from the configuration
+		-- To ensure we get deterministic results that don't change as more keys
+		-- are added to the map, and to open the possibility to controlling the
+		-- application order of flags, use a prioritized list of fields to order
+		-- the mapping, even though it takes a little longer.
 
-		for field, map in pairs(mappings) do
-			local values = cfg[field]
-			if type(values) ~= "table" then
-				values = { values }
-			end
+		for field in p.field.eachOrdered() do
+			local map = mappings[field.name]
+			if map then
 
-			-- Pass each value in the list through the map and append the
-			-- replacement, if any, to the result
+				-- Pass each cfg value in the list through the map and append the
+				-- replacement, if any, to the result
 
-			local foundValue = false
-			table.foreachi(values, function(value)
-				local replacement = map[value]
-				if replacement ~= nil then
-					foundValue = true
-					add(replacement)
+				local values = cfg[field.name]
+				if type(values) ~= "table" then
+					values = { values }
 				end
-			end)
 
-			-- If no value was mapped, check to see if the map specifies a
-			-- default value and, if so, push that into the result
-
-			if not foundValue then
-				add(map._)
-			end
-
-			-- Finally, check for "not values", which should be added to the
-			-- result if the corresponding value is not present
-
-			for key, replacement in pairs(map) do
-				if #key > 1 and key:startswith("_") then
-					key = key:sub(2)
-					if values[key] == nil then
+				local foundValue = false
+				table.foreachi(values, function(value)
+					local replacement = map[value]
+					if replacement ~= nil then
+						foundValue = true
 						add(replacement)
 					end
-				end
-			end
+				end)
 
+				-- If no value was mapped, check to see if the map specifies a
+				-- default value and, if so, push that into the result
+
+				if not foundValue then
+					add(map._)
+				end
+
+				-- Finally, check for "not values", which should be added to the
+				-- result if the corresponding value is not present
+
+				for key, replacement in pairs(map) do
+					if #key > 1 and key:startswith("_") then
+						key = key:sub(2)
+						if values[key] == nil then
+							add(replacement)
+						end
+					end
+				end
+
+			end
 		end
 
 		return flags

@@ -111,7 +111,11 @@
 --
 
 	print("Updating embedded scripts...")
-	z = execQuiet("premake5 embed")
+	if kind == "source" then
+		z = execQuiet("premake5 embed")
+	else
+		z = execQuiet("premake5 --bytecode embed")
+	end
 	if z ~= 0 then
 		error("failed to update the embedded scripts", 0)
 	end
@@ -129,7 +133,7 @@
 		for _, name in ipairs { ".git" } do
 			os.rmdir(path.join(module, name))
 		end
-		for _, name in ipairs { ".DS_Store", ".git", ".gitignore", ".gitmodules", ".travis.yml", ".editorconfig" } do
+		for _, name in ipairs { ".DS_Store", ".git", ".gitignore", ".gitmodules", ".travis.yml", ".editorconfig", "Bootstrap.mak" } do
 			os.remove(path.join(module, name))
 		end
 	end
